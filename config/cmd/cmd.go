@@ -2,8 +2,12 @@
 package cmd
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
+	"io/ioutil"
 	"math/rand"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -28,6 +32,7 @@ import (
 	"github.com/micro/go-micro/v2/store"
 	"github.com/micro/go-micro/v2/transport"
 	"github.com/micro/go-micro/v2/util/wrapper"
+	"github.com/pkg/errors"
 
 	// clients
 	cgrpc "github.com/micro/go-micro/v2/client/grpc"
@@ -308,7 +313,7 @@ var (
 		&cli.StringFlag{
 			Name:    "auth_provider_endpoint",
 			EnvVars: []string{"MICRO_AUTH_PROVIDER_ENDPOINT"},
-			Usage:   "The enpoint to be used for oauth",
+			Usage:   "The endpoint to be used for oauth",
 		},
 		&cli.StringFlag{
 			Name:    "auth_provider_redirect",
@@ -324,6 +329,18 @@ var (
 			Name:    "config",
 			EnvVars: []string{"MICRO_CONFIG"},
 			Usage:   "The source of the config to be used to get configuration",
+		},
+		&cli.BoolFlag{
+			Name:    "secure",
+			Value:   false,
+			EnvVars: []string{"MICRO_SECURE"},
+			Usage:   `Enable mTLS. Before using, read the docs at <TODO @jakexks>`,
+		},
+		&cli.StringFlag{
+			Name:    "tls_cert_path",
+			Value:   "/etc/micro/certs",
+			EnvVars: []string{"MICRO_TLS_CERT_PATH"},
+			Usage:   `Path to directory containing TLS certs.`,
 		},
 	}
 
@@ -553,7 +570,16 @@ func (c *cmd) Before(ctx *cli.Context) error {
 			return fmt.Errorf("Broker %s not found", name)
 		}
 
-		*c.opts.Broker = b()
+		if ctx.Bool("secure") {
+			tlsConfig, err := loadCerts(ctx, "broker")
+			if err != nil {
+				return err
+			}
+			*c.opts.Broker = b(broker.Secure(true), broker.TLSConfig(tlsConfig))
+		} else {
+			*c.opts.Broker = b()
+		}
+
 		serverOpts = append(serverOpts, server.Broker(*c.opts.Broker))
 		clientOpts = append(clientOpts, client.Broker(*c.opts.Broker))
 	}
@@ -815,4 +841,27 @@ func Init(opts ...Option) error {
 
 func NewCmd(opts ...Option) Cmd {
 	return newCmd(opts...)
+}
+
+func loadCerts(ctx *cli.Context, component string) (*tls.Config, error) {
+	clientCert, err := tls.LoadX509KeyPair(filepath.Join(ctx.String("tls_cert_path"), component, "cert.pem"), filepath.Join(ctx.String("tls_cert_path"), component, "key.pem"))
+	if err != nil {
+		return nil, errors.Wrapf(err, "couldn't load %s certificates", component)
+	}
+	trustedCAs, err := x509.SystemCertPool()
+	if err != nil {
+		return nil, errors.Wrap(err, "couldn't load system root CAs")
+	}
+	rootCAFile, err := ioutil.ReadFile(filepath.Join(ctx.String("tls_cert_path"), component, "ca.pem"))
+	if err != nil {
+		return nil, errors.Wrapf(err, "couldn't load %s CA", component)
+	}
+	if !trustedCAs.AppendCertsFromPEM(rootCAFile) {
+		return nil, errors.Errorf("couldn't decode %s ca.pem", component)
+	}
+	tlsConfig := &tls.Config{
+		Certificates: []tls.Certificate{clientCert},
+		RootCAs:      trustedCAs,
+	}
+	return tlsConfig, nil
 }
