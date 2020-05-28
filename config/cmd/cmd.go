@@ -844,7 +844,7 @@ func NewCmd(opts ...Option) Cmd {
 }
 
 func loadCerts(ctx *cli.Context, component string) (*tls.Config, error) {
-	clientCert, err := tls.LoadX509KeyPair(filepath.Join(ctx.String("tls_cert_path"), component, "cert.pem"), filepath.Join(ctx.String("tls_cert_path"), component, "key.pem"))
+	clientCert, err := tls.LoadX509KeyPair(filepath.Join(ctx.String("tls_cert_path"), component+"-cert.pem"), filepath.Join(ctx.String("tls_cert_path"), component+"-key.pem"))
 	if err != nil {
 		return nil, errors.Wrapf(err, "couldn't load %s certificates", component)
 	}
@@ -852,7 +852,7 @@ func loadCerts(ctx *cli.Context, component string) (*tls.Config, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "couldn't load system root CAs")
 	}
-	rootCAFile, err := ioutil.ReadFile(filepath.Join(ctx.String("tls_cert_path"), component, "ca.pem"))
+	rootCAFile, err := ioutil.ReadFile(filepath.Join(ctx.String("tls_cert_path"), component+"-ca.pem"))
 	if err != nil {
 		return nil, errors.Wrapf(err, "couldn't load %s CA", component)
 	}
