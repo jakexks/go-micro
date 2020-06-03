@@ -489,6 +489,15 @@ func (c *cmd) Before(ctx *cli.Context) error {
 	var serverOpts []server.Option
 	var clientOpts []client.Option
 
+	if ctx.Bool("secure") {
+		tlsConfig, err := loadCerts(ctx, "")
+		if err != nil {
+			return err
+		}
+		serverOpts = append(serverOpts, server.TLSConfig(tlsConfig))
+		clientOpts = append(clientOpts, grpc.AuthTLS(tlsConfig))
+	}
+
 	// setup a client to use when calling the runtime. It is important the auth client is wrapped
 	// after the cache client since the wrappers are applied in reverse order and the cache will use
 	// some of the headers set by the auth client.
@@ -613,18 +622,10 @@ func (c *cmd) Before(ctx *cli.Context) error {
 		*c.opts.Profile = p()
 	}
 
-<<<<<<< HEAD
 	// Set the client
 	if name := ctx.String("client"); len(name) > 0 {
 		// only change if we have the client and type differs
 		if cl, ok := c.opts.Clients[name]; ok && (*c.opts.Client).String() != name {
-			if ctx.Bool("secure") {
-				tlsConfig, err := loadCerts(ctx, "")
-				if err != nil {
-					return err
-				}
-				*c.opts.Client = cl(grpc.AuthTLS(tlsConfig))
-			}
 			*c.opts.Client = cl()
 		}
 	}
@@ -633,19 +634,10 @@ func (c *cmd) Before(ctx *cli.Context) error {
 	if name := ctx.String("server"); len(name) > 0 {
 		// only change if we have the server and type differs
 		if s, ok := c.opts.Servers[name]; ok && (*c.opts.Server).String() != name {
-			if ctx.Bool("secure") {
-				tlsConfig, err := loadCerts(ctx, "")
-				if err != nil {
-					return err
-				}
-				*c.opts.Server = s(server.TLSConfig(tlsConfig))
-			}
 			*c.opts.Server = s()
 		}
 	}
 
-=======
->>>>>>> 1ccd4cd940e631958a3b98699f1ea8f2f17ed25c
 	// Set the broker
 	if name := ctx.String("broker"); len(name) > 0 && (*c.opts.Broker).String() != name {
 		b, ok := c.opts.Brokers[name]
