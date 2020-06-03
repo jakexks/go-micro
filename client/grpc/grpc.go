@@ -100,6 +100,7 @@ func (g *grpcClient) next(request client.Request, opts client.CallOptions) (sele
 }
 
 func (g *grpcClient) call(ctx context.Context, node *registry.Node, req client.Request, rsp interface{}, opts client.CallOptions) error {
+	fmt.Println(req.Service(), req.Endpoint())
 	var header map[string]string
 
 	address := node.Address
