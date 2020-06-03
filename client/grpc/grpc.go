@@ -39,12 +39,13 @@ func init() {
 }
 
 // secure returns the dial option for whether its a secure or insecure connection
-func (g *grpcClient) secure(addr string) grpc.DialOption {
-	// first we check if theres'a  tls config
+func (g *grpcClient) secure(addr, serviceName string) grpc.DialOption {
+	// first we check if there's a tls config
 	if g.opts.Context != nil {
 		if v := g.opts.Context.Value(tlsAuth{}); v != nil {
 			tls := v.(*tls.Config)
 			creds := credentials.NewTLS(tls)
+			creds.OverrideServerName(serviceName)
 			// return tls config if it exists
 			return grpc.WithTransportCredentials(creds)
 		}
@@ -131,7 +132,7 @@ func (g *grpcClient) call(ctx context.Context, node *registry.Node, req client.R
 
 	grpcDialOptions := []grpc.DialOption{
 		grpc.WithTimeout(opts.DialTimeout),
-		g.secure(address),
+		g.secure(address, node.Id),
 		grpc.WithDefaultCallOptions(
 			grpc.MaxCallRecvMsgSize(maxRecvMsgSize),
 			grpc.MaxCallSendMsgSize(maxSendMsgSize),
@@ -216,7 +217,7 @@ func (g *grpcClient) stream(ctx context.Context, node *registry.Node, req client
 
 	grpcDialOptions := []grpc.DialOption{
 		grpc.WithTimeout(opts.DialTimeout),
-		g.secure(address),
+		g.secure(address, node.Id),
 	}
 
 	if opts := g.getGrpcDialOptions(); opts != nil {
