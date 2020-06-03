@@ -39,13 +39,15 @@ func init() {
 }
 
 // secure returns the dial option for whether its a secure or insecure connection
-func (g *grpcClient) secure(addr, serviceName string) grpc.DialOption {
+func (g *grpcClient) secure(addr, nodeID string) grpc.DialOption {
 	// first we check if there's a tls config
 	if g.opts.Context != nil {
 		if v := g.opts.Context.Value(tlsAuth{}); v != nil {
 			tls := v.(*tls.Config)
 			creds := credentials.NewTLS(tls)
-			creds.OverrideServerName("go.micro.registry")
+			if err := creds.OverrideServerName(strings.Split(nodeID, "-")[0]); err != nil {
+				panic(err)
+			}
 			// return tls config if it exists
 			return grpc.WithTransportCredentials(creds)
 		}
