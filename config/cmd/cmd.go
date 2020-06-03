@@ -551,6 +551,13 @@ func (c *cmd) Before(ctx *cli.Context) error {
 	if name := ctx.String("client"); len(name) > 0 {
 		// only change if we have the client and type differs
 		if cl, ok := c.opts.Clients[name]; ok && (*c.opts.Client).String() != name {
+			if ctx.Bool("secure") {
+				tlsConfig, err := loadCerts(ctx, "")
+				if err != nil {
+					return err
+				}
+				*c.opts.Client = cl(grpc.AuthTLS(tlsConfig))
+			}
 			*c.opts.Client = cl()
 		}
 	}
@@ -559,6 +566,13 @@ func (c *cmd) Before(ctx *cli.Context) error {
 	if name := ctx.String("server"); len(name) > 0 {
 		// only change if we have the server and type differs
 		if s, ok := c.opts.Servers[name]; ok && (*c.opts.Server).String() != name {
+			if ctx.Bool("secure") {
+				tlsConfig, err := loadCerts(ctx, "")
+				if err != nil {
+					return err
+				}
+				*c.opts.Server = s(server.TLSConfig(tlsConfig))
+			}
 			*c.opts.Server = s()
 		}
 	}
@@ -844,7 +858,14 @@ func NewCmd(opts ...Option) Cmd {
 }
 
 func loadCerts(ctx *cli.Context, component string) (*tls.Config, error) {
-	clientCert, err := tls.LoadX509KeyPair(filepath.Join(ctx.String("tls_cert_path"), component+"-cert.pem"), filepath.Join(ctx.String("tls_cert_path"), component+"-key.pem"))
+	var ca, cert, key string
+	ca, cert, key = component+"-ca.pem", component+"-cert.pem", component+"-key.pem"
+	if len(component) == 0 {
+		ca, cert, key = "ca.pem", "cert.pem", "key.pem"
+		component = "micro"
+	}
+
+	clientCert, err := tls.LoadX509KeyPair(filepath.Join(ctx.String("tls_cert_path"), cert), filepath.Join(ctx.String("tls_cert_path"), key))
 	if err != nil {
 		return nil, errors.Wrapf(err, "couldn't load %s certificates", component)
 	}
@@ -852,7 +873,7 @@ func loadCerts(ctx *cli.Context, component string) (*tls.Config, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "couldn't load system root CAs")
 	}
-	rootCAFile, err := ioutil.ReadFile(filepath.Join(ctx.String("tls_cert_path"), component+"-ca.pem"))
+	rootCAFile, err := ioutil.ReadFile(filepath.Join(ctx.String("tls_cert_path"), ca))
 	if err != nil {
 		return nil, errors.Wrapf(err, "couldn't load %s CA", component)
 	}
