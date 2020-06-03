@@ -15,7 +15,6 @@ import (
 	"github.com/micro/go-micro/v2/auth/provider"
 	"github.com/micro/go-micro/v2/broker"
 	"github.com/micro/go-micro/v2/client"
-	"github.com/micro/go-micro/v2/client/grpc"
 	"github.com/micro/go-micro/v2/client/selector"
 	"github.com/micro/go-micro/v2/config"
 	configSrc "github.com/micro/go-micro/v2/config/source"
@@ -495,7 +494,7 @@ func (c *cmd) Before(ctx *cli.Context) error {
 			return err
 		}
 		serverOpts = append(serverOpts, server.TLSConfig(tlsConfig))
-		clientOpts = append(clientOpts, grpc.AuthTLS(tlsConfig))
+		clientOpts = append(clientOpts, cgrpc.AuthTLS(tlsConfig))
 	}
 
 	// setup a client to use when calling the runtime. It is important the auth client is wrapped
@@ -503,7 +502,7 @@ func (c *cmd) Before(ctx *cli.Context) error {
 	// some of the headers set by the auth client.
 	authFn := func() auth.Auth { return *c.opts.Auth }
 	cacheFn := func() *client.Cache { return (*c.opts.Client).Options().Cache }
-	microClient := wrapper.CacheClient(cacheFn, grpc.NewClient())
+	microClient := wrapper.CacheClient(cacheFn, cgrpc.NewClient())
 	microClient = wrapper.AuthClient(authFn, microClient)
 
 	// Set the store

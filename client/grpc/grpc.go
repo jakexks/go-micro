@@ -388,6 +388,7 @@ func (g *grpcClient) Call(ctx context.Context, req client.Request, rsp interface
 	} else if rsp == nil {
 		return errors.InternalServerError("go.micro.client", "rsp is nil")
 	}
+	fmt.Println(req.Service(), req.Endpoint())
 	// make a copy of call opts
 	callOpts := g.opts.CallOptions
 	for _, opt := range opts {
