@@ -45,7 +45,7 @@ func (g *grpcClient) secure(addr, serviceName string) grpc.DialOption {
 		if v := g.opts.Context.Value(tlsAuth{}); v != nil {
 			tls := v.(*tls.Config)
 			creds := credentials.NewTLS(tls)
-			creds.OverrideServerName(serviceName)
+			creds.OverrideServerName("go.micro.registry")
 			// return tls config if it exists
 			return grpc.WithTransportCredentials(creds)
 		}
