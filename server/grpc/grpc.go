@@ -128,6 +128,9 @@ func (g *grpcServer) configure(opts ...server.Option) {
 
 	if creds := g.getCredentials(); creds != nil {
 		gopts = append(gopts, grpc.Creds(creds))
+	} else if g.opts.TLSConfig != nil {
+		creds := credentials.NewTLS(g.opts.TLSConfig)
+		gopts = append(gopts, grpc.Creds(creds))
 	}
 
 	if opts := g.getGrpcOptions(); opts != nil {
