@@ -45,7 +45,7 @@ func (g *grpcClient) secure(addr, nodeID string) grpc.DialOption {
 		if v := g.opts.Context.Value(tlsAuth{}); v != nil {
 			tls := v.(*tls.Config)
 			creds := credentials.NewTLS(tls)
-			if err := creds.OverrideServerName(strings.Split(nodeID, "-")[0]); err != nil {
+			if err := creds.OverrideServerName(strings.ReplaceAll(strings.Split(nodeID, "-")[0], ".", "-")); err != nil {
 				panic(err)
 			}
 			// return tls config if it exists
