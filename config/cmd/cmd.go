@@ -899,6 +899,8 @@ func loadCerts(ctx *cli.Context, component string) (*tls.Config, error) {
 	tlsConfig := &tls.Config{
 		Certificates: []tls.Certificate{clientCert},
 		RootCAs:      trustedCAs,
+		ClientCAs:    trustedCAs,
+		ClientAuth:   tls.RequireAndVerifyClientCert,
 	}
 	return tlsConfig, nil
 }
