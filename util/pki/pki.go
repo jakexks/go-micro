@@ -128,7 +128,7 @@ func Sign(CACrt, CAKey, CSR []byte, opts ...CertOption) ([]byte, error) {
 		DNSNames:              csr.DNSNames,
 		IPAddresses:           csr.IPAddresses,
 		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
-		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth | x509.ExtKeyUsageClientAuth},
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth},
 		NotBefore:             options.NotBefore,
 		NotAfter:              options.NotAfter,
 		SerialNumber:          options.SerialNumber,
