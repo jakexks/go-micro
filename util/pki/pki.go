@@ -128,14 +128,14 @@ func Sign(CACrt, CAKey, CSR []byte, opts ...CertOption) ([]byte, error) {
 		DNSNames:              csr.DNSNames,
 		IPAddresses:           csr.IPAddresses,
 		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
-		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth | x509.ExtKeyUsageClientAuth},
 		NotBefore:             options.NotBefore,
 		NotAfter:              options.NotAfter,
 		SerialNumber:          options.SerialNumber,
 		BasicConstraintsValid: true,
 	}
 
-	x509Cert, err := x509.CreateCertificate(rand.Reader, template, caCrt, caCrt.PublicKey, caKey)
+	x509Cert, err := x509.CreateCertificate(rand.Reader, template, caCrt, csr.PublicKey, caKey)
 	if err != nil {
 		return nil, errors.Wrap(err, "Couldn't sign certificate")
 	}
