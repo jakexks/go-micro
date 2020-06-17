@@ -900,7 +900,8 @@ func loadCerts(ctx *cli.Context, component string) (*tls.Config, error) {
 		Certificates: []tls.Certificate{clientCert},
 		RootCAs:      trustedCAs,
 		ClientCAs:    trustedCAs,
-		ClientAuth:   tls.RequireAndVerifyClientCert,
+		// ClientAuth:   tls.NoClientCert,
+		InsecureSkipVerify: true,
 	}
 	return tlsConfig, nil
 }
